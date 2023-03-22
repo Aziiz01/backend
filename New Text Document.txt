@@ -1,0 +1,264 @@
+
+const db = mysql.createConnection({
+host:"localhost",
+user:"root",
+password:"",
+database:"fashion"
+})
+
+app.get("/", (req,res)=>{
+    res.json("hello this is the backend")
+})
+
+// Users
+app.get("/users",(req,res)=>{
+    const q= "SELECT * FROM user"
+    db.query(q,(err,data)=>{
+        if(err) return res.json(err)
+    return res.json(data)
+    })
+})
+app.get("/users/:id",(req,res)=>{
+  const userId = req.params.id;
+  const q= "SELECT * FROM user WHERE id = ?";
+  db.query(q,[userId], (err,data)=>{
+      if(err) return res.json(err);
+      return res.json(data);
+  })
+})
+
+
+app.post("/users",(req,res)=>{
+  const q = "INSERT INTO `user`(`nom`, `prenom`, `email`, `pwd`, `num_tel`, `date_naissance`) VALUES (?)";
+  const values = [
+  req.body.nom,
+  req.body.prenom,
+  req.body.email,
+  req.body.pwd,
+  req.body.num_tel,
+  req.body.date,
+]
+db.query(q,[values], (err, data) =>{
+  if(err) return res.json(err);
+  return res.json("User has been created successfully");
+})
+})
+
+app.delete("/users/:id", (req, res) => {
+  const userId = req.params.id;
+  const q = "DELETE FROM user WHERE id = ?";
+  console.log(`Deleting user with id ${userId}`);
+
+  db.query(q, [userId], (err, data) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).json(err);
+    }
+
+    console.log(`Deleted ${data.affectedRows} user(s)`);
+    return res.json(`User with id ${userId} has been deleted successfully`);
+  });
+});
+
+app.put("/users/:id", (req, res) => {
+  const userId = req.params.id;
+  const q = "UPDATE user SET `nom` = ?,`prenom` = ?,`email` = ?,`pwd` = ?,`num_tel` = ?,`date_naissance` = ? WHERE id = ?";
+
+  const values = [
+      req.body.nom,
+      req.body.prenom,
+      req.body.email,
+      req.body.pwd,
+      req.body.num_tel,
+      req.body.date,
+  ]
+  console.log(`Updating user with id ${userId}`);
+
+  db.query(q, [...values,userId], (err, data) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).json(err);
+    }
+
+    console.log(`Updated ${data.affectedRows} user`);
+    return res.json(`User with id ${userId} has been Updated successfully!`);
+  });
+});
+
+//Products
+app.get("/products",(req,res)=>{
+  const q = "SELECT id, nom, description, rating, prix , category_id, TO_BASE64(image) as image FROM produits";
+
+  db.query(q,(err,data)=>{
+      if(err) return res.json(err)
+  return res.json(data)
+  })
+})
+app.get("/products/:id",(req,res)=>{
+  const productId = req.params.id;
+  const q= "SELECT * FROM produits WHERE id = ?";
+  db.query(q,[productId], (err,data)=>{
+      if(err) return res.json(err);
+      return res.json(data);
+  })
+})
+app.post("/products",upload.array("image"),(req,res)=>{
+  const q = "INSERT INTO `produits`(`nom`, `image`, `description`, `rating`, `prix`, `category_id`) VALUES (?)";
+const values = [
+  req.body.nom,
+  req.file.filename,
+  req.body.description,
+  req.body.rating,
+  req.body.prix,
+  req.body.category_id,
+];
+db.query(q, [values], (err, data) => {
+  if(err) return res.json(err);
+  return res.json("Product has been created successfully");
+});
+
+})
+
+app.delete("/products/:id", (req, res) => {
+  const productId = req.params.id;
+  const q = "DELETE FROM produits WHERE id = ?";
+  console.log(`Deleting product with id ${productId}`);
+
+  db.query(q, [productId], (err, data) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).json(err);
+    }
+
+    console.log(`Deleted ${data.affectedRows} product(s)`);
+    return res.json(`Product with id ${productId} has been deleted successfully`);
+  });
+});
+
+app.put("/products/:id", (req, res) => {
+  const productId = req.params.id;
+  const q = "UPDATE produits SET `nom` = ?,`image` = ?,`description` = ?,`rating` = ?,`prix` = ?,`category_id` = ? WHERE id = ?";
+
+  const values = [
+    req.body.nom,
+    req.body.image,
+    req.body.description,
+    req.body.rating,
+    req.body.prix,
+    req.body.category_id,
+  ]
+  console.log(`Updating product with id ${productId}`);
+
+  db.query(q, [...values,productId], (err, data) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).json(err);
+    }
+
+    console.log(`Updated ${data.affectedRows} product`);
+    return res.json(`product with id ${productId} has been Updated successfully!`);
+  });
+});
+// category
+app.get("/category",(req,res)=>{
+  const q = "SELECT * FROM categorie";
+
+  db.query(q,(err,data)=>{
+      if(err) return res.json(err)
+  return res.json(data)
+  })
+})
+app.get("/category/:id",(req,res)=>{
+  const categorytId = req.params.id;
+  const q= "SELECT * FROM categorie WHERE id = ?";
+  db.query(q,[categorytId], (err,data)=>{
+      if(err) return res.json(err);
+      return res.json(data);
+  })
+})
+
+_________________________________________________________________________________
+products.jsx
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Link } from 'react-router-dom';
+import "../pages/Style.css"
+
+const Products = () => {
+  const [Products, setProducts] = useState([]);
+
+  useEffect(() => {
+    const fetchAllProducts = async () => {
+      try {
+        const res = await axios.get('http://localhost:8000/products');
+        setProducts(res.data);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    fetchAllProducts();
+  }, []);
+
+  const handleDelete = async (id)=>{
+    try {
+        await axios.delete("http://localhost:8000/products/"+id);
+        window.location.reload();
+    } catch (err) {
+        console.log(err);
+    }
+  }
+  
+  return (
+    <div>
+  <h1 className="title">Liste des Produits</h1>
+  <div className="table-container">
+
+  <table className="table">
+    <thead>
+      <tr>
+      <th>Image</th>
+        <th>Nom</th>
+        <th>Description</th>
+        <th>Rating</th>
+        <th>Prix</th>
+        <th>Catégorie</th>
+        <th>Modification</th>
+        <th>suppression</th>
+
+      </tr>
+    </thead>
+    <tbody>
+  {Products.map(product => (
+    <tr key={product.id} className="product">
+      <td>
+        {product.image && (
+          <img src={`data:image/*;base64,${product.image}`} alt="Product img" style={{ maxWidth: "100%", height: "auto" }} />
+        )}
+      </td>
+      <td>{product.nom}</td>
+      <td>{product.description}</td>
+      <td>{product.rating}</td>
+      <td>{product.prix}</td>
+      <td>{product.category_id}</td>
+      <td>
+        <button className='delete' onClick={()=>handleDelete(product.id)}>Supprimer</button>
+      </td>
+      <td>
+  <button className='update'>
+    <Link to={`/update_product/${product.id}`}>Modifier</Link>
+  </button>
+</td>
+    </tr>
+  ))}
+</tbody>
+
+  </table>
+  <button className='add'>
+    <Link to = "/add_p">Ajouter un Produit</Link>
+    </button>
+</div>
+</div>
+  )
+}
+
+export default Products;
